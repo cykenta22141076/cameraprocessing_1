@@ -1,104 +1,69 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import cv2
+import seaborn as sns
+import os
+import shutil
+from scipy import signal
+import glob
+from scipy import fftpack
 
-# C extensions
-*.so
+def frame_split(video_file='./image_wave.wmv', image_dir='./image_wave２/',
+                   image_file='image_wave２-%s.png'):
+    if os.path.exists(image_dir):
+        shutil.rmtree(image_dir)
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+    if not os.path.exists(image_dir):
+        os.makedirs(image_dir)
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+    i = 0
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+    cap = cv2.VideoCapture(video_file)
+    while (cap.isOpened()):
+        flag, frame = cap.read()  # Capture frame-by-frame
+        if flag == False:  
+            break
+        cv2.imwrite(image_dir + image_file % str(i).zfill(6),
+                    frame)  
+        print('Save', image_dir + image_file % str(i).zfill(6))
+        i += 1
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+    cap.release()
+   
+frame_split("/Users/IMG.mov")
 
-# Translations
-*.mo
-*.pot
+#画像ファイルを格納，時系列にソート
+files = glob.glob("/Users/image_wave２/*.png")
+files.sort()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
+#画像を読み込み，グレースケール化し輝度を抽出
+def rgb_to_gray(src):
+  b,g,r=src[;,;,0],src[:,:,1],src[:,:,2]
+  
+  return np.array(0.2989*r+0.5870*g+0.1140*b,dtype='unit8')
+  
+images = cv2.imread(files)
+gray_images = rgb_to_gray(images)
 
-# Flask stuff:
-instance/
-.webassets-cache
 
-# Scrapy stuff:
-.scrapy
+#parameter
+in1 = 1100
+in2 = 1200
+co1 = 200
+co2 = 250
 
-# Sphinx documentation
-docs/_build/
+#メディアンフィルタによる平滑化
+gray_images_median = [cv2.medianBlur(gray_images.iloc[ in1 : in2 , co1 :co2 ].values,ksize=5)  for i in range(len(gray_images))]
 
-# PyBuilder
-target/
+#平均値を算出
+gray_images_mean = [gray_images_median[i].mean()  for i in range(len(gray_images_median))]
 
-# Jupyter Notebook
-.ipynb_checkpoints
+#サンプリング周波数
+fs = 60
 
-# pyenv
-.python-version
+end_time = round(len(gray_images_mean)/fs)
+time = np.arange(0 , end_time , end_time/len(gray_images_mean))
+plt.plot(time, gray_images_mean)
+plt.xlabel("time(s)",size=15)
 
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
